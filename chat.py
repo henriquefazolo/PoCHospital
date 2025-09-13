@@ -3,7 +3,7 @@ import streamlit as st
 
 
 @st.fragment
-def chat(api_key):
+def chat(api_key, input_data):
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('models/gemma-3-27b-it')
 
@@ -13,53 +13,65 @@ def chat(api_key):
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Container para mensagens (com altura limitada)
-    chat_container = st.container()
+    # Botão para limpar chat
+    if st.button("Limpar Chat"):
+        st.session_state.messages = []
+        st.rerun()
+
+    # Container para mensagens com altura fixa e scroll
+    chat_container = st.container(height=400)
 
     with chat_container:
-        # Mostrar mensagens anteriores
+        # Mostrar mensagens anteriores com chat_message
         for message in st.session_state.messages:
-            if message["role"] == "user":
-                st.write(f"**Você:** {message['content']}")
-            else:
-                st.write(f"**Bot:** {message['content']}")
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
 
-    # Input do usuário no sidebar
-    user_input = st.text_input("Digite sua mensagem:", key="chat_input")
+    # Input do usuário sempre embaixo
+    if user_input := st.chat_input("Digite sua mensagem..."):
+        # Adicionar mensagem do usuário ao histórico
+        st.session_state.messages.append({
+            "role": "user",
+            "content": user_input
+        })
 
-    col1, col2 = st.columns(2)
+        # Mostrar mensagem do usuário imediatamente
+        with chat_container:
+            with st.chat_message("user"):
+                st.write(user_input)
 
-    with col1:
-        if st.button("Enviar") and user_input:
-            # Adicionar mensagem do usuário
-            st.session_state.messages.append({"role": "user", "content": user_input})
+        # Mostrar indicador de carregamento
+        with chat_container:
+            with st.chat_message("assistant"):
+                with st.spinner("Pensando..."):
+                    try:
+                        # Preparar histórico para Gemini
+                        chat_history = []
+                        for msg in st.session_state.messages[:-1]:
+                            if msg["role"] == "user":
+                                chat_history.append({"role": "user", "parts": [msg["content"]]})
+                            else:
+                                chat_history.append({"role": "model", "parts": [msg["content"]]})
 
-            # Gerar resposta da IA com Gemini
-            try:
-                # Preparar histórico para Gemini
-                chat_history = []
-                for msg in st.session_state.messages[:-1]:  # Excluir última mensagem (atual)
-                    if msg["role"] == "user":
-                        chat_history.append({"role": "user", "parts": [msg["content"]]})
-                    else:
-                        chat_history.append({"role": "model", "parts": [msg["content"]]})
+                        # Iniciar chat com histórico
+                        chat = model.start_chat(history=chat_history)
 
-                # Iniciar chat com histórico
-                chat = model.start_chat(history=chat_history)
+                        # Enviar mensagem atual
+                        response = chat.send_message(f'com base nestes dados: {input_data} responda: {user_input}')
+                        reply = response.text
 
-                # Enviar mensagem atual
-                response = chat.send_message(user_input)
-                reply = response.text
+                        # Adicionar resposta da IA ao histórico
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": reply
+                        })
 
-                st.session_state.messages.append({"role": "assistant", "content": reply})
+                    except Exception as e:
+                        reply = f"Erro: {e}"
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": reply
+                        })
 
-                # Rerun para atualizar
-                st.rerun(scope="fragment")
-
-            except Exception as e:
-                st.error(f"Erro: {e}")
-
-    with col2:
-        if st.button("Limpar Chat"):
-            st.session_state.messages = []
-            st.rerun()
+        # Rerun uma única vez após todo o processamento
+        st.rerun(scope="fragment")
