@@ -3,7 +3,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import google.generativeai as genai
 from chat import chat
 import os
 from dotenv import load_dotenv
@@ -27,7 +26,60 @@ def gerar_dados_exemplo():
     }
 
 
-dados = gerar_dados_exemplo()
+dados_hospital = {
+    # Métricas principais (KPIs)
+    'metricas_principais': {
+        'total_internacoes': 3450,
+        'pacientes_novos': 892,
+        'tempo_medio_internacoes': 4.2,
+        'faturamento_mensal': 2850000,
+        'convenios_ativos': 47,
+        'taxa_aprovacao': 92,
+        'glosas_totais': 1247,
+        'valor_glosado': 342500,
+        'taxa_glosa': 12.8,
+        'fluxo_caixa_mensal': 1200000,
+        'margem_fcl': 15.3,
+        'liquidez': 2.4
+    },
+
+    # Dados de serviços/produtos
+    'servicos': {
+        'produtos': ['Consultas', 'Exames', 'Cirurgias', 'Internações'],
+        'quantidade': [315, 428, 189, 315]
+    },
+
+    # Dados de convênios
+    'convenios': {
+        'regioes': ['Unimed', 'Bradesco Saúde', 'SulAmérica', 'Amil'],
+        'vendas': [287, 195, 341, 424]
+    },
+
+    # Dados financeiros por categoria
+    'financeiro': {
+        'equipes': ['Recebimentos', 'Pagamentos', 'Investimentos', 'Financiamentos'],
+        'performance': [2850, -1950, -450, 320]
+    },
+
+    # Dados temporais (exemplo para gráficos de linha)
+    'evolucao_mensal': {
+        'meses': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+        'faturamento': [2650000, 2750000, 2850000, 2720000, 2980000, 3100000,
+                        3250000, 3180000, 3350000, 3420000, 3580000, 3650000],
+        'internacoes': [3200, 3350, 3450, 3280, 3580, 3720, 3890, 3650, 3780, 3920, 4050, 4180]
+    },
+
+    # Dados de glosas por convênio
+    'glosas_convenio': {
+        'convenio': ['Unimed', 'Bradesco Saúde', 'SulAmérica', 'Amil', 'Outros'],
+        'valor_glosado': [85600, 72300, 98400, 65200, 21000],
+        'taxa_glosa': [11.2, 13.5, 12.8, 14.1, 9.8]
+    }
+}
+_dados = gerar_dados_exemplo()
+
+dados = {**_dados, **dados_hospital}
+
 
 # Configuração da página
 st.set_page_config(
@@ -38,7 +90,7 @@ st.set_page_config(
 
 
 with st.sidebar:
-    chat(api_key=GENAI_API_KEY)
+    chat(api_key=GENAI_API_KEY, input_data=dados)
 
 
 # CSS customizado para cores azuis e branco
