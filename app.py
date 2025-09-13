@@ -3,7 +3,31 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import openai
+import google.generativeai as genai
+from chat import chat
+import os
+from dotenv import load_dotenv
+
+# Carrega as variáveis do arquivo .env
+load_dotenv()
+
+
+GENAI_API_KEY = os.getenv('GENAI_API_KEY')
+
+
+# Função para criar dados de exemplo
+def gerar_dados_exemplo():
+    np.random.seed(42)
+    return {
+        'categorias': ['A', 'B', 'C', 'D', 'E'],
+        'valores': np.random.randint(10, 100, 5),
+        'meses': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
+        'vendas': np.random.randint(50, 200, 5),
+        'lucro': np.random.randint(20, 80, 5)
+    }
+
+
+dados = gerar_dados_exemplo()
 
 # Configuração da página
 st.set_page_config(
@@ -12,55 +36,10 @@ st.set_page_config(
     layout="wide"
 )
 
+
 with st.sidebar:
-    st.header("🤖 Chat Assistant")
+    chat(api_key=GENAI_API_KEY)
 
-    # Inicializar histórico
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Container para mensagens (com altura limitada)
-    chat_container = st.container()
-
-    with chat_container:
-        # Mostrar mensagens anteriores
-        for message in st.session_state.messages:
-            if message["role"] == "user":
-                st.write(f"**Você:** {message['content']}")
-            else:
-                st.write(f"**Bot:** {message['content']}")
-
-    # Input do usuário no sidebar
-    user_input = st.text_input("Digite sua mensagem:", key="chat_input")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("Enviar") and user_input:
-            # Adicionar mensagem do usuário
-            st.session_state.messages.append({"role": "user", "content": user_input})
-
-            # Gerar resposta da IA
-            try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=st.session_state.messages,
-                    max_tokens=150  # Limitar resposta para sidebar
-                )
-
-                reply = response.choices[0].message.content
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-
-                # Rerun para atualizar
-                st.rerun()
-
-            except Exception as e:
-                st.error(f"Erro: {e}")
-
-    with col2:
-        if st.button("🗑️ Limpar Chat"):
-            st.session_state.messages = []
-            st.rerun()
 
 # CSS customizado para cores azuis e branco
 st.markdown("""
@@ -117,16 +96,6 @@ st.markdown("""
 st.markdown("<br>", unsafe_allow_html=True)
 
 
-# Função para criar dados de exemplo
-def gerar_dados_exemplo():
-    np.random.seed(42)
-    return {
-        'categorias': ['A', 'B', 'C', 'D', 'E'],
-        'valores': np.random.randint(10, 100, 5),
-        'meses': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
-        'vendas': np.random.randint(50, 200, 5),
-        'lucro': np.random.randint(20, 80, 5)
-    }
 
 
 # Função para criar gráfico de velocímetro
@@ -225,7 +194,6 @@ def criar_grafico_linhas(dados, x, y, titulo):
 
 
 # Dados de exemplo
-dados = gerar_dados_exemplo()
 
 # Bloco de Filtros
 with st.container(border=True, height="content"):
