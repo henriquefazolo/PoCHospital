@@ -32,13 +32,13 @@ def chat(api_key, input_data):
         # Adicionar mensagem do usuário ao histórico
         st.session_state.messages.append({
             "role": "user",
-            "content": user_input
+            "content": f'Usuario:\n\n{user_input}'
         })
 
         # Mostrar mensagem do usuário imediatamente
         with chat_container:
             with st.chat_message("user"):
-                st.write(user_input)
+                st.write(f'Usuario:\n\n{user_input}')
 
         # Mostrar indicador de carregamento
         with chat_container:
@@ -49,9 +49,9 @@ def chat(api_key, input_data):
                         chat_history = []
                         for msg in st.session_state.messages[:-1]:
                             if msg["role"] == "user":
-                                chat_history.append({"role": "user", "parts": [msg["content"]]})
+                                chat_history.append({"role": "user", "parts": f'Usuario:\n\n{[msg["content"]]}'})
                             else:
-                                chat_history.append({"role": "model", "parts": [msg["content"]]})
+                                chat_history.append({"role": "model", "parts": f'Usuario:\n\n{[msg["content"]]}'})
 
                         # Iniciar chat com histórico
                         chat = model.start_chat(history=chat_history)
@@ -63,7 +63,7 @@ def chat(api_key, input_data):
                         # Adicionar resposta da IA ao histórico
                         st.session_state.messages.append({
                             "role": "assistant",
-                            "content": reply
+                            "content": f'Julia:\n\n{reply}'
                         })
 
                     except Exception as e:
@@ -73,5 +73,4 @@ def chat(api_key, input_data):
                             "content": reply
                         })
 
-        # Rerun uma única vez após todo o processamento
         st.rerun(scope="fragment")
