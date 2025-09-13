@@ -3,6 +3,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
+import openai
 
 # Configuração da página
 st.set_page_config(
@@ -10,6 +11,57 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
+with st.sidebar:
+    st.header("🤖 Chat Assistant")
+
+    # Inicializar histórico
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Container para mensagens (com altura limitada)
+    chat_container = st.container()
+
+    with chat_container:
+        # Mostrar mensagens anteriores
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                st.write(f"**Você:** {message['content']}")
+            else:
+                st.write(f"**Bot:** {message['content']}")
+
+    # Input do usuário no sidebar
+    user_input = st.text_input("Digite sua mensagem:", key="chat_input")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Enviar") and user_input:
+            # Adicionar mensagem do usuário
+            st.session_state.messages.append({"role": "user", "content": user_input})
+
+            # Gerar resposta da IA
+            try:
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=st.session_state.messages,
+                    max_tokens=150  # Limitar resposta para sidebar
+                )
+
+                reply = response.choices[0].message.content
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+
+                # Rerun para atualizar
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"Erro: {e}")
+
+    with col2:
+        if st.button("🗑️ Limpar Chat"):
+            st.session_state.messages = []
+            st.rerun()
+
 # CSS customizado para cores azuis e branco
 st.markdown("""
 <style>
