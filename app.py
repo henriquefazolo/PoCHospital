@@ -148,8 +148,6 @@ st.markdown("""
 st.markdown("<br>", unsafe_allow_html=True)
 
 
-
-
 # Função para criar gráfico de velocímetro
 def criar_velocimetro(valor, titulo):
     fig = go.Figure(go.Indicator(
